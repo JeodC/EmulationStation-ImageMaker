@@ -1,6 +1,6 @@
 import os
 import configparser
-from PIL import Image, ImageDraw, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFilter
 from colorthief import ColorThief
 
 def get_dominant_color(image_path):
@@ -140,6 +140,7 @@ def create_mix_image(config):
 
             if template_image:
                 template_size = tuple(map(int, config.get('Template', 'size').split(',')))
+                template_position = tuple(map(int, config.get('Template', 'position').split(',')))  # Get position from config
                 template_image = template_image.resize(template_size, Image.Resampling.LANCZOS)
             else:
                 print(f"Warning: Template image missing for {base_name}")
@@ -164,7 +165,7 @@ def create_mix_image(config):
                 mix_image.paste(thumb_image, thumb_position, thumb_image) 
 
             if template_image:
-                template_position = (0, 0)
+                template_position = bounds_check(template_position, template_image.size, canvas_size)
                 mix_image.paste(template_image, template_position, template_image)
 
             # Save the resulting image with compression
