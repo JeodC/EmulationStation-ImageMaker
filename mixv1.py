@@ -62,6 +62,7 @@ def create_mix_image(config):
     output_folder = config.get('General', 'output_folder')
     canvas_size = tuple(map(int, config.get('General', 'canvas_size').split(',')))
     compress_level = config.getint('General', 'compress_level')
+    skip_existing = config.getboolean('General', 'skip_existing', fallback=False)
     template_enabled = config.getboolean('Template', 'enabled')
     always_on = config.getboolean('Template', 'always_on', fallback=True)
     thumb_enabled = config.getboolean('Thumb', 'enabled')
@@ -81,8 +82,14 @@ def create_mix_image(config):
     all_files = set(thumb_files) | set(screenshot_files) | set(logo_files)
     all_files = sorted(all_files)
 
+    if skip_existing:
+        print(f"Skipping existing mixv1 images.")
     for base_name in all_files:
         try:
+            output_path = os.path.join(output_folder, f"{base_name}.png")
+            if skip_existing and os.path.exists(output_path):
+                continue
+
             print(f"Processing: {base_name}")
 
             thumb_image_path = find_image_by_name('./assets/thumb', base_name) if thumb_enabled else None
@@ -165,7 +172,6 @@ def create_mix_image(config):
                 print(f"Resizing image {base_name}")
                 mix_image = mix_image.resize(resize_size, Image.Resampling.LANCZOS)
 
-            output_path = os.path.join(output_folder, f"{base_name}.png")
             mix_image.save(output_path, format='PNG', compress_level=compress_level)
 
         except Exception as e:
@@ -175,3 +181,4 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read('mixv1.ini')
     create_mix_image(config)
+    print(f"Completed processing images.")
