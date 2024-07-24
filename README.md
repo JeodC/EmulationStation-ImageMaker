@@ -20,7 +20,7 @@ The script uses a configuration file to define:
 - Settings for each image type (thumb, screenshot, logo, template) including size, position, and whether they are enabled.
 
 ### Usage
-Matching images must share the same filename. Place your images in the following directories:
+Mixv1 is configured to use Steam Header images with the floppy template. Matching images must share the same filename. Place your images in the following directories:
 
 `/assets/thumb`  
 `/assets/screenshot`  
@@ -28,6 +28,9 @@ Matching images must share the same filename. Place your images in the following
 `/assets/template`  
 
 Create or update the `mixv1.ini` file with your desired settings and run the script to generate composite images in the specified output folder.
+
+## Tips
+Sometimes you will have to modify the source images. For example, many logos are much wider than they are tall. To make them scale properly, you will want to crop the surrounding blank space and resize the source logo image to be larger.
 
 ### Requirements
 - Python 3
