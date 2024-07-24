@@ -67,10 +67,13 @@ def create_mix_image(config):
     screenshot_enabled = config.getboolean('Screenshot', 'enabled')
     logo_enabled = config.getboolean('Logo', 'enabled')
     template_enabled = config.getboolean('Template', 'enabled')
+    resize_enabled = config.getboolean('Resize', 'enabled', fallback=False)
 
     safe_width = config.getint('Logo', 'safe_width', fallback=100)
     safe_height = config.getint('Logo', 'safe_height', fallback=100)
-    corner_radius = config.getint('Screenshot', 'corner_radius', fallback=0)  # Default to 0 if not provided
+    corner_radius = config.getint('Screenshot', 'corner_radius', fallback=0)
+
+    resize_size = tuple(map(int, config.get('Resize', 'size').split(','))) if resize_enabled else None
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -82,7 +85,6 @@ def create_mix_image(config):
 
     all_files = set(thumb_files) | set(screenshot_files) | set(logo_files)
 
-    # Sort the file list A-Z
     all_files = sorted(all_files)
 
     for base_name in all_files:
@@ -94,7 +96,6 @@ def create_mix_image(config):
             logo_image_path = find_image_by_name('./assets/logo', base_name) if logo_enabled else None
             template_image_path = find_image_by_name('./assets/template', config.get('Template', 'image')) if template_enabled else None
 
-            # Load images
             thumb_image = Image.open(thumb_image_path).convert("RGBA") if thumb_image_path else None
             screenshot_image = Image.open(screenshot_image_path).convert("RGBA") if screenshot_image_path else None
             logo_image = Image.open(logo_image_path).convert("RGBA") if logo_image_path else None
@@ -119,7 +120,7 @@ def create_mix_image(config):
                 try:
                     logo_scale = float(config.get('Logo', 'scale'))
                 except ValueError:
-                    logo_scale = 1.0  # Default scale factor if not provided
+                    logo_scale = 1.0
 
                 logo_width, logo_height = logo_image.size
                 aspect_ratio = logo_width / logo_height
@@ -140,15 +141,13 @@ def create_mix_image(config):
 
             if template_image:
                 template_size = tuple(map(int, config.get('Template', 'size').split(',')))
-                template_position = tuple(map(int, config.get('Template', 'position').split(',')))  # Get position from config
+                template_position = tuple(map(int, config.get('Template', 'position').split(',')))
                 template_image = template_image.resize(template_size, Image.Resampling.LANCZOS)
             else:
                 print(f"Warning: Template image missing for {base_name}")
 
-            # Create a new image with transparent canvas
-            mix_image = Image.new('RGBA', canvas_size, (0, 0, 0, 0))  # Transparent canvas
+            mix_image = Image.new('RGBA', canvas_size, (0, 0, 0, 0))
 
-            # Calculate and paste images
             if screenshot_image:
                 screenshot_position = tuple(map(int, config.get('Screenshot', 'position').split(',')))
                 screenshot_position = bounds_check(screenshot_position, screenshot_image.size, canvas_size)
@@ -168,7 +167,11 @@ def create_mix_image(config):
                 template_position = bounds_check(template_position, template_image.size, canvas_size)
                 mix_image.paste(template_image, template_position, template_image)
 
-            # Save the resulting image with compression
+            # Resize final image if required
+            if resize_enabled and resize_size:
+                print(f"Resizing image {base_name}")
+                mix_image = mix_image.resize(resize_size, Image.Resampling.LANCZOS)
+
             output_path = os.path.join(output_folder, f"{base_name}.png")
             mix_image.save(output_path, format='PNG', compress_level=compress_level)
 
