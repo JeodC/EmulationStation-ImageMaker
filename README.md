@@ -3,7 +3,7 @@ This Python script combines multiple images into a single composite image based 
 
 ### Features
 - Composite Image Creation: Combine thumb, screenshot, logo, and template images onto a single canvas.
-- Bezel Effect: Add a gradient bezel around screenshots for a 3D effect.
+- Bezel Effect: Add a gradient bezel around screenshots for a 3D effect. Supports rounded corners.
 - Flexible Configuration: Control image sizes, positions, and other settings via ini file.
 - Dominant Color Extraction: Automatically adjust bezel color based on the dominant color of screenshots.
 - Bounds Checking: Automatically reposition images if they would exit the canvas area.
@@ -14,6 +14,7 @@ The script uses a configuration file to define:
 - `output_folder`: Directory for saving the resulting images.
 - `canvas_size`: Dimensions of the final composite image.
 - `compress_level`: Compression level for saving images.
+- `bezel_size`, `corner_radius`: Thickness of the bezel and rounded corners.
 - Settings for each image type (thumb, screenshot, logo, template) including size, position, and whether they are enabled.
 
 ### Usage

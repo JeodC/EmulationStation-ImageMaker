@@ -1,6 +1,6 @@
 import os
 import configparser
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter, ImageOps
 from colorthief import ColorThief
 
 def get_dominant_color(image_path):
@@ -13,7 +13,7 @@ def find_image_by_name(directory, base_name):
             return os.path.join(directory, file)
     return None
 
-def create_3d_bezel(image, bezel_size, dominant_color):
+def create_3d_bezel(image, bezel_size, dominant_color, corner_radius):
     # Create a new image for the bezel with a gradient effect
     width, height = image.size
     bezel_image = Image.new('RGBA', (width + 2 * bezel_size, height + 2 * bezel_size), (0, 0, 0, 0))
@@ -27,8 +27,9 @@ def create_3d_bezel(image, bezel_size, dominant_color):
             int(dominant_color[2] * (1 - i / bezel_size)),
             int(255 * (1 - i / bezel_size))
         )
-        draw.rectangle(
+        draw.rounded_rectangle(
             [i, i, width + 2 * bezel_size - i, height + 2 * bezel_size - i],
+            radius=corner_radius,
             outline=color,
             width=1
         )
@@ -69,6 +70,7 @@ def create_mix_image(config):
 
     safe_width = config.getint('Logo', 'safe_width', fallback=100)
     safe_height = config.getint('Logo', 'safe_height', fallback=100)
+    corner_radius = config.getint('Screenshot', 'corner_radius', fallback=0)  # Default to 0 if not provided
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -109,7 +111,7 @@ def create_mix_image(config):
                 screenshot_image = screenshot_image.resize(screenshot_size, Image.Resampling.LANCZOS)
                 bezel_size = config.getint('Screenshot', 'bezel_size')
                 dominant_color = get_dominant_color(screenshot_image_path)
-                screenshot_image = create_3d_bezel(screenshot_image, bezel_size, dominant_color)
+                screenshot_image = create_3d_bezel(screenshot_image, bezel_size, dominant_color, corner_radius)
             else:
                 print(f"Warning: Screenshot image missing for {base_name}")
 
@@ -162,18 +164,17 @@ def create_mix_image(config):
                 mix_image.paste(thumb_image, thumb_position, thumb_image) 
 
             if template_image:
-                template_position = tuple(map(int, config.get('Template', 'position').split(',')))
-                template_position = bounds_check(template_position, template_image.size, canvas_size)
+                template_position = (0, 0)
                 mix_image.paste(template_image, template_position, template_image)
 
             # Save the resulting image with compression
             output_path = os.path.join(output_folder, f"{base_name}.png")
-            mix_image.save(output_path, 'PNG', compress_level=compress_level)
+            mix_image.save(output_path, format='PNG', compress_level=compress_level)
 
         except Exception as e:
             print(f"Error processing {base_name}: {e}")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read('mixv1.ini')
     create_mix_image(config)
