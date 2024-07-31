@@ -179,6 +179,6 @@ def create_mix_image(config):
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read('mixv1.ini')
+    config.read('config.ini')
     create_mix_image(config)
     print(f"Completed processing images.")

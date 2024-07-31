@@ -1,5 +1,5 @@
 ## EmulationStation ImageMaker
-This Python script combines multiple images into a single composite image based on a configuration file. It processes images from specified directories and applies settings like resizing, effects, and placement. Examples are in the `mixv1` folder.
+This Python script combines multiple images into a single composite image based on a configuration file. It processes images from specified directories and applies settings like resizing, effects, and placement. Examples are in the `mixv1` and `tinybest` folders.
 
 ![image](https://github.com/user-attachments/assets/378b3c89-2610-4092-b8db-624d8f527ebc)
 
@@ -27,10 +27,12 @@ Mixv1 is configured to use Steam Header images with the floppy template. Matchin
 `/assets/logo`  
 `/assets/template`  
 
-Create or update the `mixv1.ini` file with your desired settings and run the script to generate composite images in the specified output folder.
+Create or update the `config.ini` file with your desired settings and run the script to generate composite images in the specified output folder.
 
 ## Tips
 Sometimes you will have to modify the source images. For example, many logos are much wider than they are tall. To make them scale properly, you will want to crop the surrounding blank space and resize the source logo image to be larger.
+
+There is a `config` folder which contains ini files for `mixv1` and `tinybest`. I have found these are the optimal settings for the two formats.
 
 ### Requirements
 - Python 3
