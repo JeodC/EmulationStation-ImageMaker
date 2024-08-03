@@ -1,7 +1,8 @@
 ## EmulationStation ImageMaker
 This Python script combines multiple images into a single composite image based on a configuration file. It processes images from specified directories and applies settings like resizing, effects, and placement. Examples are in the `mixv1` and `tinybest` folders.
 
-![image](https://github.com/user-attachments/assets/378b3c89-2610-4092-b8db-624d8f527ebc)
+![image](https://github.com/user-attachments/assets/378b3c89-2610-4092-b8db-624d8f527ebc) ![render96ex](https://github.com/user-attachments/assets/e8b7575e-e022-4a79-8c7d-a2c75727f31a)
+
 
 ### Features
 - Composite Image Creation: Combine thumb, screenshot, logo, and template images onto a single canvas.
