@@ -1,7 +1,18 @@
 import os
+import sys
 import configparser
+import argparse
 from PIL import Image, ImageDraw, ImageFilter
 from colorthief import ColorThief
+
+required_sections = ['General', 'Thumb', 'Screenshot', 'Logo', 'Template']
+required_keys = {
+    'General': ['output_folder', 'canvas_size', 'compress_level'],
+    'Thumb': ['enabled', 'size', 'position'],
+    'Screenshot': ['enabled', 'size', 'position', 'bezel_size', 'corner_radius'],
+    'Logo': ['enabled', 'position', 'scale'],
+    'Template': ['enabled', 'size', 'position', 'image']
+}
 
 # Gets the dominant color from the screenshot to use as the bezel gradient color
 def get_dominant_color(image_path):
@@ -57,8 +68,8 @@ def bounds_check(position, image_size, canvas_size):
 
     return (x, y)
 
-# Creates the miximagev1
-def create_mix_image(config):
+# Creates the image
+def create_image(config):
     output_folder = config.get('General', 'output_folder')
     canvas_size = tuple(map(int, config.get('General', 'canvas_size').split(',')))
     compress_level = config.getint('General', 'compress_level')
@@ -83,7 +94,7 @@ def create_mix_image(config):
     all_files = sorted(all_files)
 
     if skip_existing:
-        print(f"Skipping existing mixv1 images.")
+        print(f"Skipping existing images.")
     for base_name in all_files:
         try:
             output_path = os.path.join(output_folder, f"{base_name}.png")
@@ -106,9 +117,10 @@ def create_mix_image(config):
                 thumb_size = tuple(map(int, config.get('Thumb', 'size').split(',')))
                 thumb_image = thumb_image.resize(thumb_size, Image.Resampling.LANCZOS)
             else:
-                print(f"Warning: Thumb image missing for {base_name}")
                 if not always_on:
                     template_image = None
+                else:
+                    print(f"Warning: Thumb image missing for {base_name}")
 
             if screenshot_image:
                 screenshot_size = tuple(map(int, config.get('Screenshot', 'size').split(',')))
@@ -143,8 +155,6 @@ def create_mix_image(config):
                 template_size = tuple(map(int, config.get('Template', 'size').split(',')))
                 template_position = tuple(map(int, config.get('Template', 'position').split(',')))
                 template_image = template_image.resize(template_size, Image.Resampling.LANCZOS)
-            else:
-                print(f"Warning: Template image missing for {base_name}")
 
             mix_image = Image.new('RGBA', canvas_size, (0, 0, 0, 0))
 
@@ -178,7 +188,29 @@ def create_mix_image(config):
             print(f"Error processing {base_name}: {e}")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Image maker script.')
+    parser.add_argument('config_file', type=str, help='Name of the configuration file (without the .ini extension).')
+    parser.add_argument('--config_dir', type=str, default='config', help='Directory where the configuration files are located.')
+    args = parser.parse_args()
     config = configparser.ConfigParser()
-    config.read('config.ini')
-    create_mix_image(config)
+    config_file_path = os.path.join(args.config_dir, f"{args.config_file}.ini")
+    
+    # Error checking -- does file exist?
+    if not os.path.exists(config_file_path):
+        print(f"Error: The specified configuration file does not exist: {config_file_path}")
+        sys.exit(1)
+    ## Error checking -- is file valid?
+    config.read(config_file_path)
+    print(f"Sections found in config: {config.sections()}")
+    for section in required_sections:
+        if not config.has_section(section):
+            print(f"Error: Missing required section [{section}] in the configuration file.")
+            sys.exit(1)
+
+        for key in required_keys[section]:
+            if not config.has_option(section, key):
+                print(f"Error: Missing required key '{key}' in section [{section}] of the configuration file.")
+                sys.exit(1) 
+    print(f"Using config {config_file_path}")
+    create_image(config)
     print(f"Completed processing images.")

@@ -21,6 +21,8 @@ The script uses a configuration file to define:
 - Settings for each image type (thumb, screenshot, logo, template) including size, position, and whether they are enabled.
 
 ### Usage
+Open a terminal next to the script and type `python imgmaker.py <config>` where `<config>` is a filename in the `config/` folder. For example, `python imgmaker.py tinybest` will use the `tinybest.ini` config file.
+
 Mixv1 is configured to use Steam Header images with the floppy template. Matching images must share the same filename. Place your images in the following directories:
 
 `/assets/thumb`  
@@ -28,7 +30,7 @@ Mixv1 is configured to use Steam Header images with the floppy template. Matchin
 `/assets/logo`  
 `/assets/template`  
 
-Create or update the `config.ini` file with your desired settings and run the script to generate composite images in the specified output folder.
+Tinybest is configured to use the logo and screenshot only, attempting to mimic the TinyBest Romset artwork style.
 
 ## Tips
 Sometimes you will have to modify the source images. For example, many logos are much wider than they are tall. To make them scale properly, you will want to crop the surrounding blank space and resize the source logo image to be larger.
