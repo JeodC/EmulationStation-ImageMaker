@@ -1,3 +1,9 @@
 run.bat
-*.png
-*.jpg
+/assets/logo/*.png
+/assets/logo/*.jpg
+/assets/screenshot/*.png
+/assets/screenshot/*.jpg
+/assets/thumb/*.png
+/assets/thumb/*.jpg
+/mixv1/*.png
+/tinybest/*.png
