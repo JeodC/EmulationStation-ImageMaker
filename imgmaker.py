@@ -123,10 +123,25 @@ def create_image(config):
                     print(f"Warning: Thumb image missing for {base_name}")
 
             if screenshot_image:
+                # Normalize the screenshot: convert + resize + overwrite
+                screenshot_norm = screenshot_image.convert("RGBA")
+                screenshot_norm = screenshot_norm.resize((640, 480), Image.Resampling.LANCZOS)
+
+                # overwrite original file as PNG
+                base = os.path.splitext(screenshot_image_path)[0]
+                new_path = base + ".png"
+                screenshot_norm.save(new_path, format="PNG")
+
+                # Reload normalized screenshot so it follows config sizing
+                screenshot_image = Image.open(new_path).convert("RGBA")
+
+                # Now apply config-driven screenshot resizing (original behavior)
                 screenshot_size = tuple(map(int, config.get('Screenshot', 'size').split(',')))
                 screenshot_image = screenshot_image.resize(screenshot_size, Image.Resampling.LANCZOS)
+
+                # Bezel
                 bezel_size = config.getint('Screenshot', 'bezel_size')
-                dominant_color = get_dominant_color(screenshot_image_path)
+                dominant_color = get_dominant_color(new_path)
                 screenshot_image = create_3d_bezel(screenshot_image, bezel_size, dominant_color, corner_radius)
             else:
                 print(f"Warning: Screenshot image missing for {base_name}")
