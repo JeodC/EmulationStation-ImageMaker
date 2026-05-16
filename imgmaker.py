@@ -131,6 +131,12 @@ def create_image(config):
                 base = os.path.splitext(screenshot_image_path)[0]
                 new_path = base + ".png"
                 screenshot_norm.save(new_path, format="PNG")
+                if screenshot_image_path != new_path:
+                    try:
+                        os.remove(screenshot_image_path)
+                    except OSError:
+                        pass
+                    screenshot_image_path = new_path
 
                 # Reload normalized screenshot so it follows config sizing
                 screenshot_image = Image.open(new_path).convert("RGBA")
@@ -147,6 +153,21 @@ def create_image(config):
                 print(f"Warning: Screenshot image missing for {base_name}")
 
             if logo_image:
+                # Zealous-crop
+                bbox = logo_image.getbbox()
+                if bbox and bbox != (0, 0, logo_image.width, logo_image.height):
+                    logo_image = logo_image.crop(bbox)
+                    base = os.path.splitext(logo_image_path)[0]
+                    new_path = base + ".png"
+                    logo_image.save(new_path, format="PNG")
+                    if logo_image_path != new_path:
+                        try:
+                            os.remove(logo_image_path)
+                        except OSError:
+                            pass
+                        logo_image_path = new_path
+                    logo_image = Image.open(new_path).convert("RGBA")
+
                 try:
                     logo_scale = float(config.get('Logo', 'scale'))
                 except ValueError:
