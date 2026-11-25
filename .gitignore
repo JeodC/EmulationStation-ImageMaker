@@ -3,8 +3,11 @@ run.bat
 /assets/logo/*.jpg
 /assets/screenshot/*.png
 /assets/screenshot/*.jpg
+/assets/second/*.png
+/assets/second/*.jpg
 /assets/thumb/*.png
 /assets/thumb/*.jpg
 /mixv1/*.png
+/mixv1/screenshot/
 /tinybest/*.png
 /template/*.png

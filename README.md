@@ -6,6 +6,7 @@ This Python script combines multiple images into a single composite image using 
 
 ### Features
 - Composite Image Creation: Combine thumb, screenshot, logo, and template images onto a single canvas.
+- Second Screenshot: Overlap a second image on the screenshot, for dual screen games.
 - Bezel Effect: Add a gradient bezel around screenshots for a 3D effect. Supports rounded corners.
 - Flexible Configuration: Control image sizes, positions, and other settings via ini file.
 - Dominant Color Extraction: Automatically adjust bezel color based on the dominant color of screenshots.
@@ -19,6 +20,7 @@ The script uses a configuration file to define:
 - `compress_level`: Compression level for saving images.
 - `bezel_size`, `corner_radius`: Thickness of the bezel and rounded corners.
 - Settings for each image type (thumb, screenshot, logo, template) including size, position, and whether they are enabled.
+- `[Second]` (optional): `corner` is where the second image goes (`bottom right`, `bottom left`, `top right` or `top left`). `first_scale` and `scale` are the width of the first and second image, where 1 is the full width. `margin` is the space around them in pixels.
 
 ### Usage
 Open a terminal next to the script and type `python imgmaker.py <config>` where `<config>` is a filename in the `config/` folder. For example, `python imgmaker.py tinybest` will use the `tinybest.ini` config file.
@@ -29,6 +31,9 @@ Mixv1 is configured to use Steam Header images with the floppy template. Matchin
 `/assets/screenshot`  
 `/assets/logo`  
 `/assets/template`  
+`/assets/second` (optional)  
+
+A screenshot with a matching image in `/assets/second` gets the overlap. The two sources are not changed, and the combined 640x480 screenshot is saved to `screenshot` in the output folder.
 
 Tinybest is configured to use the logo and screenshot only, attempting to mimic the TinyBest Romset artwork style.
 

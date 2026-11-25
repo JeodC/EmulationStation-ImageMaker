@@ -2,7 +2,7 @@ import os
 import sys
 import configparser
 import argparse
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 from colorthief import ColorThief
 
 required_sections = ['General', 'Thumb', 'Screenshot', 'Logo', 'Template']
@@ -51,6 +51,42 @@ def create_3d_bezel(image, bezel_size, dominant_color, corner_radius):
     bezel_image.paste(image, (bezel_size, bezel_size), image)
     return bezel_image
 
+# Pastes an image with a thin frame and a drop shadow
+def paste_framed(canvas, image, position, size):
+    x, y = position
+    width, height = size
+    shadow = Image.new('RGBA', canvas.size, (0, 0, 0, 0))
+    ImageDraw.Draw(shadow).rounded_rectangle([x - 3, y + 1, x + width + 3, y + height + 7], radius=6, fill=(0, 0, 0, 200))
+    canvas.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(radius=6)))
+    ImageDraw.Draw(canvas).rounded_rectangle([x - 3, y - 3, x + width + 2, y + height + 2], radius=5, fill=(16, 16, 16, 255), outline=(76, 76, 76, 255))
+    canvas.paste(image.resize(size, Image.Resampling.LANCZOS), position)
+
+# Combines two screenshots, with the second one overlapping a corner of the first
+def create_overlap(first, second, size, config):
+    width, height = size
+    first_width = round(width * config.getfloat('Second', 'first_scale', fallback=0.86))
+    second_width = round(width * config.getfloat('Second', 'scale', fallback=0.41))
+    margin = config.getint('Second', 'margin', fallback=14)
+    corner = config.get('Second', 'corner', fallback='bottom right').lower()
+
+    first_size = (first_width, round(first_width * first.height / first.width))
+    second_size = (second_width, round(second_width * second.height / second.width))
+    second_x = width - margin - second_size[0] if 'right' in corner else margin
+    second_y = height - margin - second_size[1] if 'bottom' in corner else margin
+    first_x = margin if 'right' in corner else width - margin - first_size[0]
+    first_y = margin if 'bottom' in corner else height - margin - first_size[1]
+
+    # The background is the first screenshot, filled, blurred and darkened
+    fill = max(width / first.width, height / first.height)
+    background = first.resize((round(first.width * fill), round(first.height * fill)), Image.Resampling.LANCZOS)
+    left, top = (background.width - width) // 2, (background.height - height) // 2
+    background = background.crop((left, top, left + width, top + height)).convert('RGB').filter(ImageFilter.GaussianBlur(radius=14))
+    canvas = ImageEnhance.Brightness(background).enhance(0.45).convert('RGBA')
+
+    paste_framed(canvas, first, (first_x, first_y), first_size)
+    paste_framed(canvas, second, (second_x, second_y), second_size)
+    return canvas
+
 # Checks the position of images to ensure they remain entirely within the canvas
 def bounds_check(position, image_size, canvas_size):
     x, y = position
@@ -80,6 +116,7 @@ def create_image(config):
     screenshot_enabled = config.getboolean('Screenshot', 'enabled')
     corner_radius = config.getint('Screenshot', 'corner_radius', fallback=0)
     logo_enabled = config.getboolean('Logo', 'enabled')
+    second_enabled = config.getboolean('Second', 'enabled', fallback=False) and os.path.isdir('./assets/second')
     resize_enabled = config.getboolean('Resize', 'enabled', fallback=False)
     resize_size = tuple(map(int, config.get('Resize', 'size').split(','))) if resize_enabled else None
 
@@ -105,11 +142,13 @@ def create_image(config):
 
             thumb_image_path = find_image_by_name('./assets/thumb', base_name) if thumb_enabled else None
             screenshot_image_path = find_image_by_name('./assets/screenshot', base_name) if screenshot_enabled else None
+            second_image_path = find_image_by_name('./assets/second', base_name) if second_enabled else None
             logo_image_path = find_image_by_name('./assets/logo', base_name) if logo_enabled else None
             template_image_path = find_image_by_name('./assets/template', config.get('Template', 'image')) if template_enabled else None
 
             thumb_image = Image.open(thumb_image_path).convert("RGBA") if thumb_image_path else None
             screenshot_image = Image.open(screenshot_image_path).convert("RGBA") if screenshot_image_path else None
+            second_image = Image.open(second_image_path).convert("RGBA") if second_image_path else None
             logo_image = Image.open(logo_image_path).convert("RGBA") if logo_image_path else None
             template_image = Image.open(template_image_path).convert("RGBA") if template_image_path else None
 
@@ -122,7 +161,16 @@ def create_image(config):
                 else:
                     print(f"Warning: Thumb image missing for {base_name}")
 
-            if screenshot_image:
+            if screenshot_image and second_image:
+                # Leave both sources alone and save the combined screenshot separately
+                screenshot_folder = os.path.join(output_folder, 'screenshot')
+                os.makedirs(screenshot_folder, exist_ok=True)
+                new_path = os.path.join(screenshot_folder, f"{base_name}.png")
+                create_overlap(screenshot_image, second_image, (640, 480), config).convert("RGB").save(new_path, format="PNG", compress_level=compress_level)
+
+                screenshot_size = tuple(map(int, config.get('Screenshot', 'size').split(',')))
+                screenshot_image = create_overlap(screenshot_image, second_image, screenshot_size, config)
+            elif screenshot_image:
                 # Normalize the screenshot: convert + resize + overwrite
                 screenshot_norm = screenshot_image.convert("RGBA")
                 screenshot_norm = screenshot_norm.resize((640, 480), Image.Resampling.LANCZOS)
@@ -145,11 +193,12 @@ def create_image(config):
                 screenshot_size = tuple(map(int, config.get('Screenshot', 'size').split(',')))
                 screenshot_image = screenshot_image.resize(screenshot_size, Image.Resampling.LANCZOS)
 
+            if screenshot_image:
                 # Bezel
                 bezel_size = config.getint('Screenshot', 'bezel_size')
                 dominant_color = get_dominant_color(new_path)
                 screenshot_image = create_3d_bezel(screenshot_image, bezel_size, dominant_color, corner_radius)
-            else:
+            elif screenshot_enabled:
                 print(f"Warning: Screenshot image missing for {base_name}")
 
             if logo_image:
@@ -184,7 +233,7 @@ def create_image(config):
                     new_width = int(new_height * aspect_ratio)
 
                 logo_image = logo_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-            else:
+            elif logo_enabled:
                 print(f"Warning: Logo image missing for {base_name}")
 
             if template_image:
